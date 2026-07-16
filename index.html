@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b6b57" />
+  <title>Avaliações do Condomínio</title>
+  <style>
+    :root{
+      --primary:#0b6b57;--primary-dark:#075143;--accent:#f4b942;
+      --bg:#f4f7f6;--surface:#fff;--text:#1f2a27;--muted:#66736f;
+      --border:#d9e2df;--danger:#a62525;--shadow:0 16px 42px rgba(13,62,50,.10)
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;min-height:100vh;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+      color:var(--text);
+      background:radial-gradient(circle at top left,rgba(11,107,87,.14),transparent 28%),var(--bg)
+    }
+    button,input,textarea,select{font:inherit}
+    .page{width:min(100% - 28px,960px);margin:auto;padding:28px 0 52px}
+    .topbar{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:24px}
+    h1{margin:0;font-size:clamp(26px,5vw,38px)}
+    .subtitle{margin:7px 0 0;color:var(--muted)}
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    .btn{
+      min-height:46px;padding:0 18px;border-radius:13px;border:0;cursor:pointer;
+      display:inline-flex;align-items:center;justify-content:center;font-weight:800;text-decoration:none
+    }
+    .btn-primary{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;box-shadow:0 10px 22px rgba(11,107,87,.2)}
+    .btn-secondary{background:#fff;color:var(--primary);border:1px solid var(--border)}
+    .btn-danger{background:#fff3f3;color:var(--danger);border:1px solid #e7b2b2}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:22px;box-shadow:var(--shadow)}
+    .hidden{display:none!important}
+    .field{margin-bottom:20px}
+    label,.field-title{display:block;font-weight:800;margin-bottom:8px}
+    input,textarea,select{
+      width:100%;border:1px solid var(--border);border-radius:13px;background:#fff;color:var(--text);
+      padding:0 14px;outline:none
+    }
+    input,select{min-height:48px}
+    textarea{min-height:120px;padding:14px;resize:vertical}
+    input:focus,textarea:focus,select:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(11,107,87,.10)}
+    .hint{display:block;margin-top:7px;color:var(--muted);font-size:12px}
+    .required{color:var(--danger)}
+    .rating{display:flex;flex-direction:row-reverse;justify-content:flex-end;gap:8px;width:max-content}
+    .rating input{position:absolute;opacity:0;pointer-events:none}
+    .rating label{font-size:42px;line-height:1;color:#ccd4d1;cursor:pointer;margin:0}
+    .rating label:hover,.rating label:hover~label,.rating input:checked~label{color:var(--accent)}
+    .rating-text{margin-top:8px;color:var(--primary);font-weight:700}
+    .message{display:none;margin-bottom:16px;padding:12px 14px;border-radius:12px}
+    .message.error{display:block;background:#fff0f0;color:#7d1e1e;border:1px solid #f1c1c1}
+    .success{text-align:center;padding:18px}
+    .success-icon{width:72px;height:72px;border-radius:50%;margin:0 auto 16px;display:grid;place-items:center;background:#e6f6f1;color:var(--primary);font-size:36px;font-weight:900}
+    .summary{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}
+    .summary-card{background:#fff;border:1px solid var(--border);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
+    .summary-label{font-size:13px;color:var(--muted);margin-bottom:7px}.summary-value{font-size:26px;font-weight:900}
+    .stars{color:var(--accent);letter-spacing:1px}
+    .controls{display:grid;grid-template-columns:1fr 180px;gap:12px;margin-bottom:18px}
+    .review-list{display:grid;gap:14px}
+    .review-card{background:#fff;border:1px solid var(--border);border-radius:18px;padding:19px;box-shadow:var(--shadow)}
+    .review-top{display:flex;justify-content:space-between;gap:14px}
+    .guest{font-size:17px;font-weight:900}.flat{font-weight:700;color:var(--muted);margin-top:3px}
+    .date{font-size:13px;color:var(--muted);text-align:right}
+    .rating-row{display:flex;align-items:center;gap:9px;margin:12px 0}
+    .comment{margin:0;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere}
+    .empty{text-align:center;background:#fff;border:1px dashed #b9cac4;border-radius:18px;padding:42px 20px;color:var(--muted)}
+    .admin-status{display:none;margin-bottom:18px;padding:12px 14px;border-radius:13px;background:#e9f7f2;border:1px solid #bddfd3;color:var(--primary-dark);font-weight:700}
+    .admin-status.active{display:flex;justify-content:space-between;align-items:center;gap:12px}
+    .delete-btn{display:none}.admin-mode .delete-btn{display:inline-flex}
+    .modal-backdrop{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(13,27,23,.55);z-index:1000}
+    .modal-backdrop.open{display:flex}
+    .modal{width:min(100%,420px);background:#fff;border-radius:20px;padding:24px;box-shadow:0 24px 70px rgba(0,0,0,.24)}
+    .modal h2{margin:0 0 8px}.modal p{margin:0 0 18px;color:var(--muted)}
+    .modal input + label{margin-top:14px}
+    .modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+    .modal-error{min-height:20px;margin-top:8px;color:var(--danger);font-size:13px;font-weight:700}
+    button:disabled,input:disabled,textarea:disabled,select:disabled{opacity:.65;cursor:not-allowed}
+    @media(max-width:680px){
+      .topbar{align-items:stretch;flex-direction:column}.actions{width:100%}.actions .btn{width:100%}
+      .summary{grid-template-columns:1fr}.controls{grid-template-columns:1fr}.review-top{flex-direction:column}.date{text-align:left}
+      .rating{width:100%;justify-content:space-between;gap:0}.rating label{font-size:40px}
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <div class="topbar">
+      <div>
+        <h1 id="pageTitle">Todas as avaliações</h1>
+        <p id="pageSubtitle" class="subtitle">Histórico das experiências registradas pelos hóspedes.</p>
+      </div>
+      <div class="actions">
+        <button id="adminButton" class="btn btn-secondary" type="button">Acesso ADM</button>
+        <button id="openFormButton" class="btn btn-primary" type="button">+ Fazer avaliação</button>
+      </div>
+    </div>
+
+    <section id="formSection" class="card hidden">
+      <div id="formArea">
+        <div id="formMessage" class="message" role="alert"></div>
+        <form id="reviewForm" novalidate>
+          <div class="field">
+            <label for="guestName">Nome <span class="required">*</span></label>
+            <input id="guestName" type="text" placeholder="Digite seu nome" maxlength="80" required />
+          </div>
+          <div class="field">
+            <label for="flat">Nº do Flat <span class="required">*</span></label>
+            <input id="flat" type="text" placeholder="Ex.: 1204" maxlength="12" required />
+          </div>
+          <div class="field">
+            <span class="field-title">Como você avalia o resort? <span class="required">*</span></span>
+            <div class="rating">
+              <input type="radio" id="star5" name="rating" value="5"><label for="star5">★</label>
+              <input type="radio" id="star4" name="rating" value="4"><label for="star4">★</label>
+              <input type="radio" id="star3" name="rating" value="3"><label for="star3">★</label>
+              <input type="radio" id="star2" name="rating" value="2"><label for="star2">★</label>
+              <input type="radio" id="star1" name="rating" value="1"><label for="star1">★</label>
+            </div>
+            <div id="ratingText" class="rating-text">Selecione uma nota</div>
+          </div>
+          <div class="field">
+            <label for="comment">Comentário <span class="hint" style="display:inline;margin:0">(opcional)</span></label>
+            <textarea id="comment" maxlength="700" placeholder="Conte um pouco sobre sua experiência..."></textarea>
+          </div>
+          <button id="submitButton" class="btn btn-primary" style="width:100%;min-height:54px" type="submit">Enviar avaliação</button>
+          <button id="cancelFormButton" class="btn btn-secondary" style="width:100%;margin-top:10px" type="button">Voltar ao histórico</button>
+        </form>
+      </div>
+
+      <div id="successArea" class="success hidden">
+        <div class="success-icon">✓</div>
+        <h2>Avaliação enviada!</h2>
+        <p>Sua avaliação foi adicionada ao histórico.</p>
+        <button id="viewReviewsButton" class="btn btn-primary" type="button">Ver todas as avaliações</button>
+      </div>
+    </section>
+
+    <section id="historySection">
+      <div id="adminStatus" class="admin-status">
+        <span>Modo administrador ativo — exclusão liberada.</span>
+        <button id="logoutButton" class="btn btn-secondary" type="button">Sair do ADM</button>
+      </div>
+
+      <div class="summary">
+        <div class="summary-card"><div class="summary-label">Total de avaliações</div><div id="totalReviews" class="summary-value">0</div></div>
+        <div class="summary-card"><div class="summary-label">Média geral</div><div id="averageRating" class="summary-value">0,0</div></div>
+        <div class="summary-card"><div class="summary-label">Classificação</div><div id="averageStars" class="summary-value stars">☆☆☆☆☆</div></div>
+      </div>
+
+      <div class="controls">
+        <input id="searchInput" type="search" placeholder="Buscar por nome ou flat...">
+        <select id="ratingFilter">
+          <option value="all">Todas as notas</option>
+          <option value="5">5 estrelas</option><option value="4">4 estrelas</option>
+          <option value="3">3 estrelas</option><option value="2">2 estrelas</option><option value="1">1 estrela</option>
+        </select>
+      </div>
+
+      <div id="reviewList" class="review-list"></div>
+    </section>
+  </main>
+
+  <div id="adminModal" class="modal-backdrop">
+    <div class="modal">
+      <h2>Acesso administrativo</h2>
+      <p>Digite o e-mail e a senha cadastrados para liberar a exclusão de avaliações.</p>
+      <label for="adminEmail">E-mail do administrador</label>
+      <input id="adminEmail" type="email" placeholder="Digite o e-mail" autocomplete="username">
+      <label for="adminPassword">Senha do administrador</label>
+      <input id="adminPassword" type="password" placeholder="Digite a senha" autocomplete="current-password">
+      <div id="adminError" class="modal-error"></div>
+      <div class="modal-actions">
+        <button id="cancelAdminButton" class="btn btn-secondary" type="button">Cancelar</button>
+        <button id="loginAdminButton" class="btn btn-primary" type="button">Entrar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7/dist/umd/supabase.min.js"></script>
+  <script>
+    const SUPABASE_URL = "https://ronvuranppifsqmqqutp.supabase.co";
+    const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_L7yswBNTcBuZSnfBhnLP7g_uuKuniyp";
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+    const $ = (id) => document.getElementById(id);
+    let reviews = [];
+    let isAdmin = false;
+
+    function escapeHtml(value){
+      return String(value).replaceAll("&","&amp;").replaceAll("<","&lt;")
+        .replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
+    }
+
+    function stars(n){ return "★".repeat(n) + "☆".repeat(5-n); }
+
+    function formatDate(value){
+      const d = new Date(value);
+      return Number.isNaN(d.getTime()) ? "Data não informada" :
+        new Intl.DateTimeFormat("pt-BR",{dateStyle:"short",timeStyle:"short"}).format(d);
+    }
+
+    function setFormError(message){
+      $("formMessage").textContent = message;
+      $("formMessage").className = message ? "message error" : "message";
+    }
+
+    function showForm(){
+      $("historySection").classList.add("hidden");
+      $("formSection").classList.remove("hidden");
+      $("pageTitle").textContent = "Avalie sua experiência";
+      $("pageSubtitle").textContent = "Sua opinião nos ajuda a tornar sua hospedagem ainda melhor.";
+      $("openFormButton").classList.add("hidden");
+      $("adminButton").classList.add("hidden");
+      $("successArea").classList.add("hidden");
+      $("formArea").classList.remove("hidden");
+      setFormError("");
+      $("guestName").focus();
+    }
+
+    async function showHistory(){
+      $("formSection").classList.add("hidden");
+      $("historySection").classList.remove("hidden");
+      $("pageTitle").textContent = "Todas as avaliações";
+      $("pageSubtitle").textContent = "Histórico das experiências registradas pelos hóspedes.";
+      $("openFormButton").classList.remove("hidden");
+      $("adminButton").classList.remove("hidden");
+      await loadReviews();
+    }
+
+    async function refreshAdminState(){
+      const {data:{session}} = await supabaseClient.auth.getSession();
+      if(!session){ isAdmin = false; return; }
+
+      const {data, error} = await supabaseClient.rpc("is_review_admin");
+      isAdmin = !error && data === true;
+      if(!isAdmin) await supabaseClient.auth.signOut();
+    }
+
+    async function loadReviews(){
+      $("reviewList").innerHTML = '<div class="empty"><strong>Carregando avaliações...</strong></div>';
+      const {data, error} = await supabaseClient
+        .from("reviews")
+        .select("id,guest_name,flat_number,rating,review_text,created_at")
+        .order("created_at",{ascending:false});
+
+      if(error){
+        reviews = [];
+        renderReviews();
+        $("reviewList").innerHTML = '<div class="empty"><strong>Não foi possível carregar as avaliações.</strong><br>Tente atualizar a página em alguns instantes.</div>';
+        return;
+      }
+
+      reviews = Array.isArray(data) ? data : [];
+      renderReviews();
+    }
+
+    function renderReviews(){
+      $("totalReviews").textContent = reviews.length;
+      const avg = reviews.length ? reviews.reduce((sum,item)=>sum+Number(item.rating||0),0)/reviews.length : 0;
+      $("averageRating").textContent = avg.toFixed(1).replace(".",",");
+      $("averageStars").textContent = stars(Math.round(avg));
+
+      $("adminStatus").classList.toggle("active", isAdmin);
+      $("adminButton").textContent = isAdmin ? "ADM ativo" : "Acesso ADM";
+
+      const term = $("searchInput").value.trim().toLowerCase();
+      const filter = $("ratingFilter").value;
+      const filtered = reviews.filter(item=>{
+        const matchText = item.guest_name.toLowerCase().includes(term) || item.flat_number.toLowerCase().includes(term);
+        const matchRating = filter === "all" || String(item.rating) === filter;
+        return matchText && matchRating;
+      });
+
+      if(!filtered.length){
+        $("reviewList").innerHTML = '<div class="empty"><strong>Nenhuma avaliação encontrada</strong><br>As novas avaliações aparecerão aqui.</div>';
+        return;
+      }
+
+      $("reviewList").innerHTML = filtered.map(item=>{
+        const rating = Math.max(1,Math.min(5,Number(item.rating)||1));
+        return `<article class="review-card ${isAdmin?"admin-mode":""}">
+          <div class="review-top">
+            <div><div class="guest">${escapeHtml(item.guest_name)}</div><div class="flat">Flat ${escapeHtml(item.flat_number)}</div></div>
+            <div>
+              <div class="date">${formatDate(item.created_at)}</div>
+              <button class="btn btn-danger delete-btn" data-id="${escapeHtml(item.id)}" type="button">Excluir</button>
+            </div>
+          </div>
+          <div class="rating-row"><span class="stars">${stars(rating)}</span><strong>${rating}/5</strong></div>
+          <p class="comment">${item.review_text ? escapeHtml(item.review_text) : "<em>Nenhum comentário informado.</em>"}</p>
+        </article>`;
+      }).join("");
+
+      document.querySelectorAll(".delete-btn").forEach(button=>{
+        button.addEventListener("click",()=>deleteReview(button));
+      });
+    }
+
+    async function deleteReview(button){
+      if(!isAdmin || !confirm("Excluir esta avaliação? Esta ação não poderá ser desfeita.")) return;
+      button.disabled = true;
+      button.textContent = "Excluindo...";
+
+      const {data, error} = await supabaseClient
+        .from("reviews")
+        .delete()
+        .eq("id",button.dataset.id)
+        .select("id");
+
+      if(error || !data || data.length === 0){
+        alert("Não foi possível excluir a avaliação. Entre novamente no acesso ADM e tente outra vez.");
+        await refreshAdminState();
+        renderReviews();
+        return;
+      }
+
+      await loadReviews();
+    }
+
+    $("reviewForm").addEventListener("submit",async(e)=>{
+      e.preventDefault();
+      setFormError("");
+      const name = $("guestName").value.trim();
+      const flat = $("flat").value.trim();
+      const selected = document.querySelector('input[name="rating"]:checked');
+      if(!name){setFormError("Informe o nome."); $("guestName").focus(); return;}
+      if(!flat){setFormError("Informe o número do flat."); $("flat").focus(); return;}
+      if(!selected){setFormError("Selecione uma nota."); return;}
+
+      const submitButton = $("submitButton");
+      submitButton.disabled = true;
+      submitButton.textContent = "Enviando...";
+
+      const {error} = await supabaseClient.from("reviews").insert({
+        guest_name:name,
+        flat_number:flat,
+        rating:Number(selected.value),
+        review_text:$("comment").value.trim()
+      });
+
+      submitButton.disabled = false;
+      submitButton.textContent = "Enviar avaliação";
+
+      if(error){
+        setFormError("Não foi possível enviar a avaliação. Verifique sua internet e tente novamente.");
+        return;
+      }
+
+      $("formArea").classList.add("hidden");
+      $("successArea").classList.remove("hidden");
+    });
+
+    document.querySelectorAll('input[name="rating"]').forEach(input=>{
+      input.addEventListener("change",()=>{
+        const labels={1:"Ruim",2:"Regular",3:"Bom",4:"Muito bom",5:"Excelente"};
+        $("ratingText").textContent=labels[input.value];
+      });
+    });
+
+    $("openFormButton").addEventListener("click",showForm);
+    $("cancelFormButton").addEventListener("click",showHistory);
+    $("viewReviewsButton").addEventListener("click",()=>{
+      $("reviewForm").reset();
+      $("ratingText").textContent="Selecione uma nota";
+      showHistory();
+    });
+
+    $("adminButton").addEventListener("click",()=>{
+      if(isAdmin) return;
+      $("adminEmail").value="";
+      $("adminPassword").value="";
+      $("adminError").textContent="";
+      $("adminModal").classList.add("open");
+      setTimeout(()=>$("adminEmail").focus(),50);
+    });
+
+    $("cancelAdminButton").addEventListener("click",()=>$("adminModal").classList.remove("open"));
+
+    $("loginAdminButton").addEventListener("click",async()=>{
+      const email = $("adminEmail").value.trim();
+      const password = $("adminPassword").value;
+      if(!email){$("adminError").textContent="Digite o e-mail."; return;}
+      if(!password){$("adminError").textContent="Digite a senha."; return;}
+
+      const button = $("loginAdminButton");
+      button.disabled = true;
+      button.textContent = "Entrando...";
+      $("adminError").textContent = "";
+
+      const {error} = await supabaseClient.auth.signInWithPassword({email,password});
+      if(!error) await refreshAdminState();
+
+      button.disabled = false;
+      button.textContent = "Entrar";
+
+      if(error || !isAdmin){
+        await supabaseClient.auth.signOut();
+        $("adminError").textContent="Senha incorreta ou acesso não autorizado.";
+        return;
+      }
+
+      $("adminEmail").value="";
+      $("adminPassword").value="";
+      $("adminModal").classList.remove("open");
+      renderReviews();
+    });
+
+    $("adminEmail").addEventListener("keydown",event=>{
+      if(event.key === "Enter") $("adminPassword").focus();
+    });
+
+    $("adminPassword").addEventListener("keydown",event=>{
+      if(event.key === "Enter") $("loginAdminButton").click();
+    });
+
+    $("logoutButton").addEventListener("click",async()=>{
+      await supabaseClient.auth.signOut();
+      isAdmin=false;
+      renderReviews();
+    });
+
+    $("searchInput").addEventListener("input",renderReviews);
+    $("ratingFilter").addEventListener("change",renderReviews);
+
+    async function initialize(){
+      await refreshAdminState();
+      await loadReviews();
+    }
+
+    initialize();
+  </script>
+</body>
+</html>
