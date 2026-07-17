@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b0b0c">
+  <title>Mapa do Hotel — SERHS Natal</title>
+  <style>
+    :root{
+      --bg:#09090a;
+      --surface:#141416;
+      --surface-2:#1c1c1f;
+      --gold:#d8ad45;
+      --gold-soft:#f0cf7a;
+      --text:#f7f3e9;
+      --muted:#aaa8a3;
+      --border:rgba(216,173,69,.58);
+      --shadow:0 24px 70px rgba(0,0,0,.45);
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text)}
+    body{
+      min-height:100dvh;
+      font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+      background:
+        radial-gradient(circle at 50% -12%,rgba(216,173,69,.15),transparent 30%),
+        linear-gradient(180deg,#0d0d0f 0%,#080809 100%);
+      overscroll-behavior:none;
+    }
+    button{font:inherit}
+    .app{
+      width:min(100%,1220px);
+      min-height:100dvh;
+      margin:auto;
+      padding:max(22px,env(safe-area-inset-top)) clamp(14px,3vw,30px) max(22px,env(safe-area-inset-bottom));
+      display:flex;
+      flex-direction:column;
+      gap:18px;
+    }
+    .header{text-align:center;padding-top:2px}
+    .header h1{
+      margin:0;
+      color:var(--gold-soft);
+      font-family:Georgia,"Times New Roman",serif;
+      font-weight:500;
+      font-size:clamp(34px,7vw,64px);
+      letter-spacing:-.02em;
+      text-wrap:balance;
+    }
+    .ornament{display:flex;align-items:center;justify-content:center;gap:10px;margin:9px auto 8px;color:var(--gold);width:min(330px,74vw)}
+    .ornament::before,.ornament::after{content:"";height:1px;flex:1;background:linear-gradient(90deg,transparent,var(--gold))}
+    .ornament::after{background:linear-gradient(90deg,var(--gold),transparent)}
+    .ornament span{font-size:17px}
+    .subtitle{margin:0;color:var(--muted);font-size:clamp(15px,3.6vw,20px)}
+    .languages{
+      width:min(100%,620px);
+      margin:0 auto;
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:10px;
+    }
+    .language-btn{
+      appearance:none;
+      border:1px solid transparent;
+      border-radius:20px;
+      background:transparent;
+      color:var(--muted);
+      min-width:0;
+      min-height:108px;
+      padding:9px 5px 10px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:7px;
+      cursor:pointer;
+      transition:background .22s ease,border-color .22s ease,color .22s ease,transform .18s ease;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .language-btn:hover{background:rgba(255,255,255,.04);color:var(--text)}
+    .language-btn:active{transform:scale(.97)}
+    .language-btn[aria-pressed="true"]{background:linear-gradient(180deg,rgba(216,173,69,.13),rgba(216,173,69,.04));border-color:var(--border);color:var(--gold-soft)}
+    .flag{
+      width:clamp(54px,14vw,72px);
+      aspect-ratio:1;
+      border-radius:50%;
+      overflow:hidden;
+      display:grid;
+      place-items:center;
+      border:2px solid rgba(255,255,255,.34);
+      box-shadow:0 10px 25px rgba(0,0,0,.3);
+      transition:box-shadow .22s ease,border-color .22s ease;
+    }
+    .language-btn[aria-pressed="true"] .flag{border-color:var(--gold-soft);box-shadow:0 0 0 5px rgba(216,173,69,.15),0 12px 28px rgba(0,0,0,.4)}
+    .flag svg{width:100%;height:100%;display:block}
+    .language-label{font-weight:750;font-size:clamp(13px,3.3vw,17px);white-space:nowrap}
+    .viewer-card{
+      position:relative;
+      flex:1;
+      min-height:420px;
+      border:1px solid var(--border);
+      border-radius:26px;
+      background:#030304;
+      overflow:hidden;
+      box-shadow:var(--shadow);
+    }
+    .map-viewport{
+      position:relative;
+      width:100%;
+      height:clamp(440px,61dvh,850px);
+      min-height:420px;
+      overflow:hidden;
+      background:#050505;
+      touch-action:none;
+      user-select:none;
+      cursor:grab;
+      isolation:isolate;
+    }
+    .map-viewport.dragging{cursor:grabbing}
+    .map-image{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      object-fit:contain;
+      transform-origin:0 0;
+      will-change:transform;
+      pointer-events:none;
+      -webkit-user-drag:none;
+    }
+    .viewer-top{
+      position:absolute;
+      top:14px;
+      left:14px;
+      right:84px;
+      z-index:4;
+      display:flex;
+      align-items:center;
+      gap:9px;
+      pointer-events:none;
+    }
+    .map-badge{
+      min-height:38px;
+      padding:0 14px;
+      display:inline-flex;
+      align-items:center;
+      border:1px solid rgba(216,173,69,.5);
+      border-radius:999px;
+      color:var(--gold-soft);
+      background:rgba(8,8,9,.82);
+      backdrop-filter:blur(12px);
+      font-weight:800;
+      box-shadow:0 8px 24px rgba(0,0,0,.24);
+    }
+    .zoom-value{
+      min-height:34px;
+      padding:0 10px;
+      display:inline-flex;
+      align-items:center;
+      border-radius:999px;
+      color:#fff;
+      background:rgba(8,8,9,.7);
+      backdrop-filter:blur(10px);
+      font-size:13px;
+      font-weight:800;
+    }
+    .controls{
+      position:absolute;
+      z-index:5;
+      top:14px;
+      right:14px;
+      display:grid;
+      gap:9px;
+    }
+    .control-btn{
+      width:52px;
+      height:52px;
+      padding:0;
+      border:1px solid rgba(216,173,69,.72);
+      border-radius:17px;
+      background:rgba(8,8,9,.88);
+      color:var(--gold-soft);
+      display:grid;
+      place-items:center;
+      cursor:pointer;
+      box-shadow:0 9px 25px rgba(0,0,0,.28);
+      backdrop-filter:blur(12px);
+      transition:transform .16s ease,background .16s ease;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .control-btn:hover{background:#191919}.control-btn:active{transform:scale(.93)}
+    .control-btn svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+    .hint{
+      position:absolute;
+      z-index:4;
+      left:50%;
+      bottom:14px;
+      transform:translateX(-50%);
+      width:max-content;
+      max-width:calc(100% - 28px);
+      min-height:46px;
+      padding:9px 15px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:16px;
+      background:rgba(8,8,9,.82);
+      color:#eee;
+      backdrop-filter:blur(12px);
+      font-size:clamp(12px,3vw,15px);
+      text-align:center;
+      pointer-events:none;
+      box-shadow:0 10px 26px rgba(0,0,0,.28);
+    }
+    .hint svg{width:24px;height:24px;flex:0 0 auto;stroke:var(--gold-soft);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+    .loading{
+      position:absolute;
+      inset:0;
+      z-index:6;
+      display:grid;
+      place-items:center;
+      background:#09090a;
+      color:var(--gold-soft);
+      transition:opacity .2s ease,visibility .2s ease;
+    }
+    .loading.hidden{opacity:0;visibility:hidden}
+    .spinner{width:38px;height:38px;border:3px solid rgba(216,173,69,.2);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .map-viewport:fullscreen,.map-viewport.fullscreen-fallback{height:100dvh;width:100vw;border-radius:0;background:#000}
+    .map-viewport.fullscreen-fallback{position:fixed;inset:0;z-index:9999}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    @media(min-width:760px){
+      .app{gap:20px}
+      .language-btn{min-height:118px}
+      .controls{top:18px;right:18px}.viewer-top{top:18px;left:18px}
+      .control-btn{width:56px;height:56px}
+    }
+    @media(max-height:720px) and (orientation:landscape){
+      .app{min-height:100dvh;display:grid;grid-template-columns:250px 1fr;grid-template-rows:auto 1fr;gap:12px 18px}
+      .header{grid-column:1;grid-row:1}.header h1{font-size:34px}.subtitle{font-size:14px}.ornament{margin:5px auto;width:210px}
+      .languages{grid-column:1;grid-row:2;grid-template-columns:1fr;align-content:start}.language-btn{min-height:86px;flex-direction:row;justify-content:flex-start;padding:8px 14px}.flag{width:50px}.language-label{font-size:14px}
+      .viewer-card{grid-column:2;grid-row:1/3;min-height:0}.map-viewport{height:calc(100dvh - 28px);min-height:0}
+    }
+    @media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="header">
+      <h1 id="title">Mapa do Hotel</h1>
+      <div class="ornament" aria-hidden="true"><span>◇</span></div>
+      <p id="subtitle" class="subtitle">Escolha seu idioma</p>
+    </header>
+
+    <nav class="languages" aria-label="Selecionar idioma">
+      <button class="language-btn" type="button" data-lang="pt" aria-pressed="true" aria-label="Português">
+        <span class="flag" aria-hidden="true">
+          <svg viewBox="0 0 100 100" role="img"><rect width="100" height="100" fill="#139447"/><path d="M50 14 91 50 50 86 9 50Z" fill="#f8dc35"/><circle cx="50" cy="50" r="22" fill="#283c91"/><path d="M29 46c14-5 29-2 42 7" stroke="#fff" stroke-width="5" fill="none"/></svg>
+        </span>
+        <span class="language-label">Português</span>
+      </button>
+      <button class="language-btn" type="button" data-lang="es" aria-pressed="false" aria-label="Español">
+        <span class="flag" aria-hidden="true">
+          <svg viewBox="0 0 100 100" role="img"><rect width="100" height="100" fill="#c60b1e"/><rect y="25" width="100" height="50" fill="#ffc400"/><rect x="25" y="41" width="10" height="20" rx="2" fill="#b1192e"/><path d="M23 39h14M25 63h10" stroke="#8b1123" stroke-width="3"/></svg>
+        </span>
+        <span class="language-label">Español</span>
+      </button>
+      <button class="language-btn" type="button" data-lang="en" aria-pressed="false" aria-label="English">
+        <span class="flag" aria-hidden="true">
+          <svg viewBox="0 0 100 100" role="img"><rect width="100" height="100" fill="#fff"/><g fill="#c51f3a"><rect y="0" width="100" height="8"/><rect y="16" width="100" height="8"/><rect y="32" width="100" height="8"/><rect y="48" width="100" height="8"/><rect y="64" width="100" height="8"/><rect y="80" width="100" height="8"/><rect y="96" width="100" height="4"/></g><rect width="50" height="54" fill="#27477c"/><g fill="#fff"><circle cx="9" cy="9" r="2"/><circle cx="24" cy="9" r="2"/><circle cx="39" cy="9" r="2"/><circle cx="16" cy="20" r="2"/><circle cx="31" cy="20" r="2"/><circle cx="9" cy="31" r="2"/><circle cx="24" cy="31" r="2"/><circle cx="39" cy="31" r="2"/><circle cx="16" cy="42" r="2"/><circle cx="31" cy="42" r="2"/></g></svg>
+        </span>
+        <span class="language-label">English</span>
+      </button>
+    </nav>
+
+    <section class="viewer-card" aria-label="Visualizador do mapa">
+      <div id="viewport" class="map-viewport" tabindex="0">
+        <img id="mapImage" class="map-image" alt="Mapa do Hotel SERHS Natal em português" draggable="false">
+
+        <div class="viewer-top">
+          <span id="mapBadge" class="map-badge">Português</span>
+          <span id="zoomValue" class="zoom-value">100%</span>
+        </div>
+
+        <div class="controls" aria-label="Controles do mapa">
+          <button id="zoomIn" class="control-btn" type="button" aria-label="Ampliar mapa" title="Ampliar">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          </button>
+          <button id="zoomOut" class="control-btn" type="button" aria-label="Reduzir mapa" title="Reduzir">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg>
+          </button>
+          <button id="resetMap" class="control-btn" type="button" aria-label="Restaurar mapa" title="Restaurar">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7v5h5"/><path d="M5.6 16.5A8 8 0 1 0 6 6.3L4 8"/></svg>
+          </button>
+          <button id="fullscreen" class="control-btn" type="button" aria-label="Abrir em tela cheia" title="Tela cheia">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg>
+          </button>
+        </div>
+
+        <div id="hint" class="hint">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 11V7a2 2 0 0 1 4 0v3M12 10V5a2 2 0 0 1 4 0v6M16 10V8a2 2 0 0 1 4 0v6c0 4-3 7-7 7h-1c-3 0-5-1-7-4l-2-3a2 2 0 0 1 3-2l2 2v-3a2 2 0 0 1 4 0"/></svg>
+          <span id="hintText">Use dois dedos para ampliar e mover</span>
+        </div>
+
+        <div id="loading" class="loading" aria-hidden="true"><div class="spinner"></div></div>
+      </div>
+    </section>
+    <div id="status" class="sr-only" aria-live="polite"></div>
+  </main>
+
+  <script>
+    const maps={
+      pt:{
+        src:"mapa-pt.webp",
+        title:"Mapa do Hotel",
+        subtitle:"Escolha seu idioma",
+        hint:"Use dois dedos para ampliar e mover",
+        badge:"Português",
+        alt:"Mapa do Hotel SERHS Natal em português",
+        loaded:"Mapa em português carregado",
+        labels:{zoomIn:"Ampliar mapa",zoomOut:"Reduzir mapa",reset:"Restaurar mapa",fullscreen:"Abrir em tela cheia"}
+      },
+      es:{
+        src:"mapa-es.webp",
+        title:"Mapa del Hotel",
+        subtitle:"Elige tu idioma",
+        hint:"Usa dos dedos para ampliar y mover",
+        badge:"Español",
+        alt:"Mapa del Hotel SERHS Natal en español",
+        loaded:"Mapa en español cargado",
+        labels:{zoomIn:"Ampliar mapa",zoomOut:"Reducir mapa",reset:"Restaurar mapa",fullscreen:"Abrir en pantalla completa"}
+      },
+      en:{
+        src:"mapa-en.webp",
+        title:"Hotel Map",
+        subtitle:"Choose your language",
+        hint:"Use two fingers to zoom and move",
+        badge:"English",
+        alt:"SERHS Natal Hotel map in English",
+        loaded:"English map loaded",
+        labels:{zoomIn:"Zoom in",zoomOut:"Zoom out",reset:"Reset map",fullscreen:"Open fullscreen"}
+      }
+    };
+
+    const $=id=>document.getElementById(id);
+    const viewport=$("viewport");
+    const image=$("mapImage");
+    const pointers=new Map();
+    const state={scale:1,x:0,y:0,min:1,max:5,lang:"pt",dragStart:null,pinch:null};
+
+    function clamp(value,min,max){return Math.min(max,Math.max(min,value));}
+
+    function clampPosition(){
+      if(state.scale<=1){state.x=0;state.y=0;return;}
+      const rect=viewport.getBoundingClientRect();
+      const limitX=rect.width*(state.scale-1);
+      const limitY=rect.height*(state.scale-1);
+      state.x=clamp(state.x,-limitX,0);
+      state.y=clamp(state.y,-limitY,0);
+    }
+
+    function applyTransform(animate=false){
+      clampPosition();
+      image.style.transition=animate?"transform .22s ease":"none";
+      image.style.transform=`translate3d(${state.x}px,${state.y}px,0) scale(${state.scale})`;
+      $("zoomValue").textContent=`${Math.round(state.scale*100)}%`;
+      if(animate)setTimeout(()=>image.style.transition="none",230);
+    }
+
+    function resetMap(animate=true){
+      state.scale=1;state.x=0;state.y=0;state.dragStart=null;state.pinch=null;
+      applyTransform(animate);
+    }
+
+    function zoomAt(nextScale,clientX,clientY,animate=false){
+      const rect=viewport.getBoundingClientRect();
+      const px=(clientX??rect.left+rect.width/2)-rect.left;
+      const py=(clientY??rect.top+rect.height/2)-rect.top;
+      const oldScale=state.scale;
+      const target=clamp(nextScale,state.min,state.max);
+      const worldX=(px-state.x)/oldScale;
+      const worldY=(py-state.y)/oldScale;
+      state.scale=target;
+      state.x=px-worldX*target;
+      state.y=py-worldY*target;
+      applyTransform(animate);
+    }
+
+    function setLanguage(lang){
+      const map=maps[lang];
+      if(!map)return;
+      state.lang=lang;
+      document.documentElement.lang=lang==="pt"?"pt-BR":lang;
+      $("title").textContent=map.title;
+      $("subtitle").textContent=map.subtitle;
+      $("hintText").textContent=map.hint;
+      $("mapBadge").textContent=map.badge;
+      $("status").textContent=map.loaded;
+      image.alt=map.alt;
+      $("loading").classList.remove("hidden");
+      document.querySelectorAll(".language-btn").forEach(button=>button.setAttribute("aria-pressed",String(button.dataset.lang===lang)));
+      $("zoomIn").setAttribute("aria-label",map.labels.zoomIn);
+      $("zoomOut").setAttribute("aria-label",map.labels.zoomOut);
+      $("resetMap").setAttribute("aria-label",map.labels.reset);
+      $("fullscreen").setAttribute("aria-label",map.labels.fullscreen);
+      resetMap(false);
+      image.src=map.src;
+    }
+
+    image.addEventListener("load",()=>$("loading").classList.add("hidden"));
+    image.addEventListener("error",()=>{$("loading").classList.add("hidden");$("status").textContent="Não foi possível carregar o mapa";});
+    document.querySelectorAll(".language-btn").forEach(button=>button.addEventListener("click",()=>setLanguage(button.dataset.lang)));
+
+    $("zoomIn").addEventListener("click",()=>zoomAt(state.scale*1.35,null,null,true));
+    $("zoomOut").addEventListener("click",()=>zoomAt(state.scale/1.35,null,null,true));
+    $("resetMap").addEventListener("click",()=>resetMap(true));
+
+    viewport.addEventListener("wheel",event=>{
+      event.preventDefault();
+      zoomAt(state.scale*(event.deltaY<0?1.16:.86),event.clientX,event.clientY);
+    },{passive:false});
+
+    viewport.addEventListener("dblclick",event=>{
+      event.preventDefault();
+      state.scale>1.05?resetMap(true):zoomAt(2,event.clientX,event.clientY,true);
+    });
+
+    function pointerMidpoint(){
+      const values=[...pointers.values()];
+      return{x:(values[0].x+values[1].x)/2,y:(values[0].y+values[1].y)/2};
+    }
+    function pointerDistance(){
+      const values=[...pointers.values()];
+      return Math.hypot(values[0].x-values[1].x,values[0].y-values[1].y);
+    }
+
+    viewport.addEventListener("pointerdown",event=>{
+      viewport.setPointerCapture(event.pointerId);
+      pointers.set(event.pointerId,{x:event.clientX,y:event.clientY});
+      viewport.classList.add("dragging");
+      if(pointers.size===1){
+        state.dragStart={pointerX:event.clientX,pointerY:event.clientY,x:state.x,y:state.y};
+        state.pinch=null;
+      }else if(pointers.size===2){
+        const rect=viewport.getBoundingClientRect();
+        const mid=pointerMidpoint();
+        const px=mid.x-rect.left,py=mid.y-rect.top;
+        state.pinch={distance:pointerDistance(),scale:state.scale,worldX:(px-state.x)/state.scale,worldY:(py-state.y)/state.scale};
+        state.dragStart=null;
+      }
+    });
+
+    viewport.addEventListener("pointermove",event=>{
+      if(!pointers.has(event.pointerId))return;
+      pointers.set(event.pointerId,{x:event.clientX,y:event.clientY});
+      if(pointers.size===1 && state.dragStart && state.scale>1){
+        state.x=state.dragStart.x+(event.clientX-state.dragStart.pointerX);
+        state.y=state.dragStart.y+(event.clientY-state.dragStart.pointerY);
+        applyTransform();
+      }else if(pointers.size===2 && state.pinch){
+        const rect=viewport.getBoundingClientRect();
+        const mid=pointerMidpoint();
+        const px=mid.x-rect.left,py=mid.y-rect.top;
+        state.scale=clamp(state.pinch.scale*(pointerDistance()/state.pinch.distance),state.min,state.max);
+        state.x=px-state.pinch.worldX*state.scale;
+        state.y=py-state.pinch.worldY*state.scale;
+        applyTransform();
+      }
+    });
+
+    function endPointer(event){
+      pointers.delete(event.pointerId);
+      state.pinch=null;
+      if(pointers.size===1){
+        const remaining=[...pointers.values()][0];
+        state.dragStart={pointerX:remaining.x,pointerY:remaining.y,x:state.x,y:state.y};
+      }else{
+        state.dragStart=null;
+        viewport.classList.remove("dragging");
+      }
+      applyTransform();
+    }
+    viewport.addEventListener("pointerup",endPointer);
+    viewport.addEventListener("pointercancel",endPointer);
+
+    viewport.addEventListener("keydown",event=>{
+      const step=42;
+      if(event.key==="+"||event.key==="="){$("zoomIn").click();event.preventDefault();}
+      if(event.key==="-"){$("zoomOut").click();event.preventDefault();}
+      if(event.key==="0"){$("resetMap").click();event.preventDefault();}
+      if(state.scale>1 && ["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"].includes(event.key)){
+        if(event.key==="ArrowLeft")state.x+=step;
+        if(event.key==="ArrowRight")state.x-=step;
+        if(event.key==="ArrowUp")state.y+=step;
+        if(event.key==="ArrowDown")state.y-=step;
+        applyTransform();event.preventDefault();
+      }
+    });
+
+    $("fullscreen").addEventListener("click",async()=>{
+      try{
+        if(document.fullscreenElement){await document.exitFullscreen();return;}
+        if(viewport.requestFullscreen){await viewport.requestFullscreen();return;}
+      }catch{}
+      viewport.classList.toggle("fullscreen-fallback");
+      document.body.style.overflow=viewport.classList.contains("fullscreen-fallback")?"hidden":"";
+      setTimeout(()=>resetMap(false),30);
+    });
+    document.addEventListener("fullscreenchange",()=>setTimeout(()=>resetMap(false),30));
+    window.addEventListener("resize",()=>applyTransform());
+
+    setLanguage("pt");
+  </script>
+</body>
+</html>
